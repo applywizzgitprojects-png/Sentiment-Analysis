@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sentiment Analysis Tool</title>
+
+<!-- ====== Modern, clean theming ====== -->
+<style>
+  :root{
+    --bg: #0f1221;
+    --bg-grad1: #667eea;
+    --bg-grad2: #764ba2;
+    --panel: rgba(255,255,255,.08);
+    --card: rgba(255,255,255,.10);
+    --text: #e9ecf1;
+    --muted: #b9c0cf;
+    --accent: #7b86ff;
+    --accent-2:#b07cff;
+    --positive:#35d07f;
+    --negative:#ff5a7a;
+    --neutral:#a6b0c3;
+    --ring: rgba(123,134,255,.2);
+    --shadow: 0 10px 30px rgba(0,0,0,.35);
+    --blur: blur(16px);
+  }
+  /* Light mode */
+  .light{
+    --bg: #f6f7fb;
+    --panel: rgba(255,255,255,.9);
+    --card: #ffffff;
+    --text:#161a2b;
+    --muted:#5b6477;
+    --accent:#6366f1;
+    --accent-2:#8b5cf6;
+    --ring: rgba(99,102,241,.15);
+    --shadow: 0 12px 26px rgba(22,26,43,.08);
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    color:var(--text);
+    background:
+      radial-gradient(1200px 700px at 20% -10%, rgba(102,126,234,.25), transparent 60%),
+      radial-gradient(1200px 700px at 120% 10%, rgba(118,75,162,.25), transparent 60%),
+      linear-gradient(135deg, var(--bg-grad1), var(--bg-grad2));
+    min-height:100%;
+  }
+
+  .shell{
+    max-width:1200px;
+    margin:0 auto;
+    padding:28px 20px 64px;
+  }
+
+  /* Header / Toolbar */
+  .toolbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:18px;
+  }
+  .brand{
+    display:flex;align-items:center;gap:12px;
+    font-weight:700;font-size:18px;letter-spacing:.2px
+  }
+  .badge{
+    background:linear-gradient(180deg, var(--accent), var(--accent-2));
+    color:#fff;border-radius:8px;padding:8px 12px;font-weight:600;box-shadow:var(--shadow)
+  }
+  .toggle{
+    display:flex;align-items:center;gap:10px;
+    background:var(--panel);backdrop-filter:var(--blur);
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:12px;padding:8px 12px;cursor:pointer;
+    box-shadow:var(--shadow)
+  }
+
+  /* Hero */
+  .hero{
+    background:var(--panel);
+    backdrop-filter:var(--blur);
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:20px;
+    padding:28px;
+    box-shadow:var(--shadow);
+  }
+  .hero h1{margin:0 0 6px;font-size:32px;font-weight:800;letter-spacing:.2px}
+  .hero p{margin:0;color:var(--muted)}
+  .hero .chips{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
+  .chip{background:var(--card);border:1px solid rgba(255,255,255,.12);padding:6px 10px;border-radius:999px;color:var(--muted);font-size:12px}
+
+  /* Grid: left tools + right features */
+  .grid{
+    display:grid;grid-template-columns:1.2fr .8fr;gap:22px;margin-top:22px
+  }
+  @media (max-width: 980px){.grid{grid-template-columns:1fr}}
+
+  /* Card */
+  .card{
+    background:var(--panel);backdrop-filter:var(--blur);
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:16px;box-shadow:var(--shadow);
+    padding:22px
+  }
+  .card h2{margin:0 0 14px;font-size:18px}
+  .sub{color:var(--muted);font-size:14px;margin-bottom:14px}
+
+  /* Input Row */
+  .row{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start}
+  .ta{
+    width:100%;min-height:120px;resize:vertical;
+    border-radius:14px;padding:14px 16px;
+    border:1px solid transparent;background:var(--card);color:var(--text);
+    outline:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+    transition:border .15s, box-shadow .15s, background .15s
+  }
+  .ta:focus{border-color:var(--accent);box-shadow:0 0 0 6px var(--ring)}
+  .btn{
+    border:0;color:#fff;font-weight:700;letter-spacing:.2px;
+    background:linear-gradient(180deg, var(--accent), var(--accent-2));
+    border-radius:12px;padding:14px 20px;cursor:pointer;
+    box-shadow:var(--shadow);transition:transform .08s ease
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn[disabled]{opacity:.6;cursor:not-allowed;transform:none}
+
+  /* Result */
+  .result{
+    margin-top:16px;padding:16px;border-radius:14px;background:var(--card);
+    border:1px solid rgba(255,255,255,.10)
+  }
+  .flex{display:flex;gap:14px;align-items:center}
+  .emo{font-size:28px}
+  .tag{font-weight:800;text-transform:capitalize}
+  .tag.positive{color:var(--positive)} .tag.negative{color:var(--negative)} .tag.neutral{color:var(--neutral)}
+  .muted{color:var(--muted);font-size:13px}
+  .bar{height:10px;background:rgba(255,255,255,.10);border-radius:999px;overflow:hidden;margin-top:10px}
+  .fill{height:100%;width:0;background:var(--accent);transition:width .45s ease;border-radius:999px}
+
+  /* Example chips */
+  .examples{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .ex{
+    border:1px dashed rgba(255,255,255,.18);background:transparent;color:var(--muted);
+    padding:8px 10px;border-radius:10px;cursor:pointer
+  }
+  .ex:hover{border-style:solid;color:var(--text)}
+
+  /* Stats */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+  @media (max-width:680px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{
+    background:var(--card);border:1px solid rgba(255,255,255,.12);border-radius:14px;
+    text-align:center;padding:16px
+  }
+  .big{font-weight:900;font-size:24px}
+  .lab{color:var(--muted);font-size:12px;margin-top:4px}
+
+  /* Feature column */
+  .cards{display:grid;gap:12px}
+  .feature{background:var(--panel);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:18px}
+  .feature .ttl{font-weight:800;margin-bottom:6px}
+  .feature .desc{color:var(--muted);font-size:14px}
+
+  /* Footer */
+  .foot{margin-top:28px;text-align:center;color:var(--muted);font-size:12px}
+</style>
+</head>
+
+<body class="light"><!-- set .light or remove for dark -->
+  <div class="shell">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="brand">
+        <span class="badge">🤖 Sentiment</span>
+        <span style="opacity:.85">Analysis Tool</span>
+      </div>
+      <button class="toggle" id="modeBtn" title="Toggle light/dark">🌙 Dark mode</button>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero">
+      <h1>Understand Emotion in Text</h1>
+      <p>Analyze the emotional tone of any sentence: <strong>Positive</strong>, <strong>Neutral</strong>, or <strong>Negative</strong>.</p>
+      <div class="chips">
+        <span class="chip">Real-time</span>
+        <span class="chip">Confidence score</span>
+        <span class="chip">Negation aware</span>
+      </div>
+    </section>
+
+    <!-- Main -->
+    <div class="grid">
+      <!-- Left: Analyzer -->
+      <section class="card">
+        <h2>Single Analysis</h2>
+        <p class="sub">Paste text and click <em>Predict</em>.</p>
+
+        <div class="row">
+          <textarea id="textInput" class="ta" placeholder="Type something like: “I absolutely love this product, it’s amazing!”"></textarea>
+          <button id="predictBtn" class="btn">Predict</button>
+        </div>
+
+        <div id="resultContainer" class="result" style="display:none">
+          <div class="flex">
+            <div id="sentimentIcon" class="emo">😊</div>
+            <div>
+              <div id="sentimentLabel" class="tag positive">Positive</div>
+              <div id="confidenceScore" class="muted">Confidence: 85%</div>
+            </div>
+          </div>
+          <div class="bar"><div id="confidenceFill" class="fill"></div></div>
+        </div>
+
+        <div class="examples">
+          <button class="ex" onclick="loadExample('I absolutely love this product! It exceeded all my expectations and the customer service was amazing.')">Positive review</button>
+          <button class="ex" onclick="loadExample('This movie was terrible. The plot made no sense and the acting was awful.')">Negative review</button>
+          <button class="ex" onclick="loadExample('The weather today is okay—neither good nor bad.')">Neutral comment</button>
+          <button class="ex" onclick="loadExample('The service was disappointing and the food was cold. Would not recommend.')">Negative feedback</button>
+          <button class="ex" onclick="loadExample('I am so excited about the new features! This update is incredible.')">Positive feedback</button>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><div id="totalAnalyses" class="big">0</div><div class="lab">Total Analyses</div></div>
+          <div class="stat"><div id="positiveCount" class="big">0</div><div class="lab">Positive</div></div>
+          <div class="stat"><div id="negativeCount" class="big">0</div><div class="lab">Negative</div></div>
+          <div class="stat"><div id="neutralCount" class="big">0</div><div class="lab">Neutral</div></div>
+        </div>
+      </section>
+
+      <!-- Right: Features -->
+      <aside class="cards">
+        <div class="feature">
+          <div class="ttl">🧠 Advanced NLP</div>
+          <div class="desc">Understands context and basic negations to avoid common sentiment traps.</div>
+        </div>
+        <div class="feature">
+          <div class="ttl">⚡ Real-time Results</div>
+          <div class="desc">Instant classification with a clear confidence meter.</div>
+        </div>
+        <div class="feature">
+          <div class="ttl">📊 Insightful Output</div>
+          <div class="desc">Readable labels and a progress bar—no clutter.</div>
+        </div>
+        <div class="feature">
+          <div class="ttl">🎯 Practical & Friendly</div>
+          <div class="desc">Great for quick checks of reviews, posts, or customer feedback.</div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="foot">Tip: Press <strong>Enter</strong> to predict (Shift+Enter for a new line).</div>
+  </div>
+
+<!-- ========== Your original JS logic polished ========== -->
+<script>
+  // Theme toggle
+  const modeBtn = document.getElementById('modeBtn');
+  modeBtn.addEventListener('click', () => {
+    document.body.classList.toggle('light');
+    modeBtn.textContent = document.body.classList.contains('light') ? '🌙 Dark mode' : '☀️ Light mode';
+  });
+
+  // Stats
+  let stats = { total:0, positive:0, negative:0, neutral:0 };
+
+  // Lexicon
+  const positiveWords = [
+    'amazing','awesome','excellent','fantastic','great','wonderful','perfect','outstanding','brilliant','superb',
+    'love','like','enjoy','appreciate','adore','pleased','satisfied','happy','delighted','thrilled',
+    'good','best','better','nice','fine','beautiful','gorgeous','stunning','impressive','remarkable',
+    'helpful','useful','valuable','beneficial','effective','efficient','reliable','trustworthy','professional',
+    'recommend','worth','quality','premium','superior','exceptional','incredible','phenomenal','marvelous'
+  ];
+  const negativeWords = [
+    'terrible','awful','horrible','disgusting','pathetic','worst','hate','dislike','despise','loathe',
+    'bad','poor','disappointing','unsatisfactory','inadequate','inferior','useless','worthless','pointless',
+    'annoying','frustrating','irritating','aggravating','boring','dull','bland','tasteless','cheap',
+    'broken','damaged','defective','faulty','unreliable','slow','expensive','overpriced','waste',
+    'problem','issue','trouble','difficulty','complaint','regret','mistake','error','fail','failed'
+  ];
+  const negationWords = ['not','no','never','nothing','nobody','nowhere','neither','nor','barely','hardly','scarcely','seldom','rarely'];
+
+  const textEl = document.getElementById('textInput');
+  const btn = document.getElementById('predictBtn');
+
+  btn.addEventListener('click', analyzeSentiment);
+  textEl.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); analyzeSentiment(); }
+  });
+  textEl.addEventListener('input', autoGrow);
+  function autoGrow(){ this.style.height='auto'; this.style.height=Math.max(120,this.scrollHeight)+'px'; }
+
+  function analyzeSentiment(){
+    const text = textEl.value.trim();
+    if(!text){ textEl.focus(); return; }
+
+    btn.disabled = true; btn.textContent = 'Analyzing…';
+
+    setTimeout(()=>{
+      const result = performSentimentAnalysis(text);
+      displayResult(result);
+      updateStats(result.sentiment);
+      btn.disabled = false; btn.textContent = 'Predict';
+    }, 400);
+  }
+
+  function performSentimentAnalysis(text){
+    const words = (text.toLowerCase().match(/\b[\w']+\b/g) || []);
+    let pos=0, neg=0, negFlag=false, windowCount=0;
+
+    for(let i=0;i<words.length;i++){
+      const w = words[i];
+
+      if(negationWords.includes(w)){ negFlag=true; windowCount=0; continue; }
+
+      // scope negation to next two sentiment tokens
+      const isPos = positiveWords.includes(w);
+      const isNeg = negativeWords.includes(w);
+
+      if(isPos || isNeg){
+        if(negFlag){
+          if(isPos) neg++; else pos++;
+          windowCount++;
+          if(windowCount>=2) negFlag=false;
+        }else{
+          if(isPos) pos++; else neg++;
+        }
+      }
+    }
+
+    const total = pos+neg;
+    let sentiment='neutral', confidence=60;
+
+    if(total>0){
+      const ratio = pos/total;
+      if(ratio>0.6){ sentiment='positive'; confidence = Math.min(95, 70+(ratio-0.6)*62.5); }
+      else if(ratio<0.4){ sentiment='negative'; confidence = Math.min(95, 70+(0.4-ratio)*62.5); }
+      else{ sentiment='neutral'; confidence = 60 + Math.abs(ratio-0.5)*40; }
+    }
+
+    // length-based calibration
+    const len = words.length;
+    if(len<5) confidence*=0.8;
+    else if(len>50) confidence=Math.min(95, confidence*1.1);
+
+    return { sentiment, confidence:Math.round(confidence), positiveScore:pos, negativeScore:neg };
+  }
+
+  function displayResult(r){
+    const wrap = document.getElementById('resultContainer');
+    const icon = document.getElementById('sentimentIcon');
+    const label = document.getElementById('sentimentLabel');
+    const score = document.getElementById('confidenceScore');
+    const fill = document.getElementById('confidenceFill');
+
+    let emo='😐', color='var(--neutral)';
+    if(r.sentiment==='positive'){ emo='😊'; color='var(--positive)'; }
+    if(r.sentiment==='negative'){ emo='😞'; color='var(--negative)'; }
+
+    icon.textContent = emo;
+    label.textContent = r.sentiment.charAt(0).toUpperCase()+r.sentiment.slice(1);
+    label.className = 'tag '+r.sentiment;
+    score.textContent = `Confidence: ${r.confidence}%`;
+    fill.style.background = color;
+    fill.style.width = r.confidence+'%';
+
+    wrap.style.display='block';
+    wrap.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+
+  function updateStats(s){
+    stats.total++; stats[s]++;
+    document.getElementById('totalAnalyses').textContent = stats.total;
+    document.getElementById('positiveCount').textContent = stats.positive;
+    document.getElementById('negativeCount').textContent = stats.negative;
+    document.getElementById('neutralCount').textContent = stats.neutral;
+  }
+
+  function loadExample(t){
+    textEl.value = t; autoGrow.call(textEl); textEl.focus();
+  }
+</script>
+</body>
+</html>
